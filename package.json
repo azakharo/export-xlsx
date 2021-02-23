@@ -11,9 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "chalk": "4.1.0",
-    "lodash": "4.17.21",
-    "moment": "2.29.1",
     "xlsx": "0.16.9"
   }
 }
