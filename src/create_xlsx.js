@@ -3,19 +3,48 @@
 const {concat, reduce, filter} = require('lodash');
 const XLSX = require('xlsx');
 const chalk = require('chalk');
+
 const {getTimePeriodStr, log} = require('./utils');
 
 
-module.exports = function createXlsx(data, dtStart, dtEnd, outdir) {
-  const fldCoreHoursSpent = data.fldCoreHoursSpent;
-  const fldCoreHoursPlanned = data.fldCoreHoursPlanned;
+module.exports = function createXlsx(dtStart, dtEnd, outdir) {
+  const fldCoreHoursSpent = 22;
+  const fldCoreHoursPlanned = 20;
 
   log('Creating XLSX...');
   const SHEET_NAME = 'Лист 1';
   const wb = XLSX.utils.book_new();
 
   // Leave only employees who worked
-  const allEmployees = data.employees;
+  const allEmployees = [
+    {
+      id: 'Alexey',
+      totalWork: 1,
+      name: 'Alexey',
+      proj2work: {
+        "1": 120,
+        "2": 60,
+      },
+    },
+    {
+      id: 'Anton',
+      totalWork: 2,
+      name: 'Anton',
+      proj2work: {
+        "1": 150,
+        "2": 70,
+      },
+    },
+    {
+      id: 'Vadim',
+      totalWork: 3,
+      name: 'Vadim',
+      proj2work: {
+        "1": 550,
+        "2": 0,
+      },
+    },
+  ];
   const employees = filter(allEmployees, e => e.totalWork > 0);
 
   // Document properties
@@ -78,13 +107,78 @@ module.exports = function createXlsx(data, dtStart, dtEnd, outdir) {
   lineNum += 1;
 
   // Leave only projects with real work or core hours during the specified period
-  const allProjects = data.projects;
+  const allProjects = [
+    {
+      totalWork: 8,
+      totalCoreHours: 5,
+      actual_work_with_sub_tasks: 6,
+      planned_work: 10,
+      name: 'Проект №1',
+      id: '1',
+      tasks: [
+        {
+          actual_work_with_sub_tasks: 400,
+          planned_work: 500,
+          name: 'task 11',
+          totalWork: "400",
+          employee2work: {
+            'Alexey': 100,
+            'Anton': 200,
+            'Vadim': 100,
+          },
+        },
+        {
+          actual_work_with_sub_tasks: 400,
+          planned_work: 500,
+          name: 'task 12',
+          totalWork: "400",
+          employee2work: {
+            'Alexey': 100,
+            'Anton': 200,
+            'Vadim': 100,
+          },
+        },
+      ],
+    },
+    {
+      totalWork: 28,
+      totalCoreHours: 25,
+      actual_work_with_sub_tasks: 26,
+      planned_work: 30,
+      name: 'Проект №2',
+      id: '2',
+      tasks: [
+        {
+          actual_work_with_sub_tasks: 400,
+          planned_work: 500,
+          name: 'task 21',
+          totalWork: "400",
+          employee2work: {
+            'Alexey': 100,
+            'Anton': 200,
+            'Vadim': 100,
+          },
+        },
+        {
+          actual_work_with_sub_tasks: 400,
+          planned_work: 500,
+          name: 'task 22',
+          totalWork: "400",
+          employee2work: {
+            'Alexey': 100,
+            'Anton': 200,
+            'Vadim': 100,
+          },
+        },
+      ],
+    },
+  ];
   const projects = filter(allProjects, p => p.totalWork > 0 || p.totalCoreHours);
 
   // Draw the data table's body
   const projLineStyle = {
     fill: {
-      fgColor: {rgb: "FFFF75"} // Actually set's background
+      fgColor: {rgb: "#FFFF75"} // Actually set's background
     },
     border: {
       top: {style: "thin", color: {auto: 1}},
@@ -131,8 +225,8 @@ module.exports = function createXlsx(data, dtStart, dtEnd, outdir) {
         drawCell({t: 'n', z: '0.00', v: taskWorkFromCard / taskPlannedWork}, ws, lineNum, COL_WORK_PLANNED_RATIO);
       }
       // Draw core hours columns
-      const taskCoreHours = task[fldCoreHoursSpent.fieldNameInTask];
-      const taskCoreHoursPlanned = task[fldCoreHoursPlanned.fieldNameInTask] || 0;
+      const taskCoreHours = 50;
+      const taskCoreHoursPlanned = 0;
       drawCell({t: 'n', z: '0', v: taskCoreHours}, ws, lineNum, COL_CORE_HOURS);
       drawCell({t: 'n', z: '0', v: taskCoreHoursPlanned}, ws, lineNum, COL_CORE_HOURS_PLANNED);
       const taskCoreHoursRatio = taskCoreHoursPlanned ? taskCoreHours / taskCoreHoursPlanned : 0;
@@ -146,8 +240,8 @@ module.exports = function createXlsx(data, dtStart, dtEnd, outdir) {
   });
 
   // Draw the final line (total-total)
-  const allProjWorkFromCard = reduce(projects, (total, proj) => (total + (+proj.actual_work_with_sub_tasks)), 0);
-  const allProjPlannedWork = reduce(projects, (total, proj) => (total + (+proj.planned_work)), 0);
+  const allProjWorkFromCard = 100;
+  const allProjPlannedWork = 200;
   const totalLineStyle = {
     font: {bold: true},
     fill: {
@@ -164,21 +258,19 @@ module.exports = function createXlsx(data, dtStart, dtEnd, outdir) {
     s: totalLineStyle}, ws, lineNum, COL_PROJ);
   drawCell({t: 's', v: '', s: totalLineStyle}, ws, lineNum, COL_TASK);
   drawCell({t: 'n', z: '0', v: work2hours(allProjWorkFromCard), s: totalLineStyle}, ws, lineNum, COL_WORK_FROM_CARD);
-  drawCell({t: 'n', z: '0', v: work2hours(data.totalTotal), s: totalLineStyle}, ws, lineNum, COL_WORK);
+  drawCell({t: 'n', z: '0', v: work2hours(800), s: totalLineStyle}, ws, lineNum, COL_WORK);
   drawCell({t: 'n', z: '0', v: work2hours(allProjPlannedWork), s: totalLineStyle}, ws, lineNum, COL_WORK_PLANNED);
   if (allProjPlannedWork) {
-    drawCell({t: 'n', z: '0.00', v: data.totalTotal / allProjPlannedWork, s: totalLineStyle}, ws,
+    drawCell({t: 'n', z: '0.00', v: 800 / allProjPlannedWork, s: totalLineStyle}, ws,
       lineNum, COL_WORK_PLANNED_RATIO);
   }
   else {
     drawCell({t: 's', v: '', s: totalLineStyle}, ws, lineNum, COL_WORK_PLANNED_RATIO);
   }
-  drawCell({t: 'n', z: '0', v: data.totalCoreHours, s: totalLineStyle}, ws, lineNum, COL_CORE_HOURS);
-  drawCell({t: 'n', z: '0', v: data.totalCoreHoursPlanned, s: totalLineStyle}, ws, lineNum, COL_CORE_HOURS_PLANNED);
-  if (data.totalCoreHoursPlanned) {
-    drawCell({t: 'n', z: '0.00', v: data.totalCoreHours / data.totalCoreHoursPlanned, s: totalLineStyle}, ws,
-      lineNum, COL_CORE_HOURS_PLANNED_RATIO);
-  }
+  drawCell({t: 'n', z: '0', v: 800, s: totalLineStyle}, ws, lineNum, COL_CORE_HOURS);
+  drawCell({t: 'n', z: '0', v: 1000, s: totalLineStyle}, ws, lineNum, COL_CORE_HOURS_PLANNED);
+  drawCell({t: 'n', z: '0.00', v: 800 / 1000, s: totalLineStyle}, ws,
+    lineNum, COL_CORE_HOURS_PLANNED_RATIO);
   // Draw work hours per employee
   employees.forEach((empl, emplInd) => {
     drawCell({t: 'n', z: '0', v: work2hours(empl.totalWork || 0), s: totalLineStyle}, ws,
